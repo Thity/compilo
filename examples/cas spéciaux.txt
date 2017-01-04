@@ -1,0 +1,1 @@
+var sign : Bool // true means positive. (commentaire après ligne sans point-virgule)
