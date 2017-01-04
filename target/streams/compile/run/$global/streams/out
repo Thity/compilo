@@ -1,0 +1,13 @@
+[0m[[0minfo[0m] [0mRunning toolc.Main examples/Pi.tool[0m
+[0m[[0mdebug[0m] [0mWaiting for threads to exit or System.exit to be called.[0m
+[0m[[0mdebug[0m] [0m  Classpath:[0m
+[0m[[0mdebug[0m] [0m	/home/thity27/clp2016-group07/target/scala-2.11/classes[0m
+[0m[[0mdebug[0m] [0m	/home/thity27/clp2016-group07/lib/manifest.jar[0m
+[0m[[0mdebug[0m] [0m	/home/thity27/clp2016-group07/lib/cafebabe_2.11-1.2.jar[0m
+[0m[[0mdebug[0m] [0m	/home/thity27/clp2016-group07/lib/grammarcomparison_2.11-0.1.jar[0m
+[0m[[0mdebug[0m] [0m	/home/thity27/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.8.jar[0m
+[0m[[0mdebug[0m] [0mWaiting for thread run-main-5 to terminate.[0m
+[0m[[0mdebug[0m] [0m	Thread run-main-5 exited.[0m
+[0m[[0mdebug[0m] [0mInterrupting remaining threads (should be all daemons).[0m
+[0m[[0mdebug[0m] [0mSandboxed run complete..[0m
+[0m[[0mdebug[0m] [0mExited with code 0[0m
