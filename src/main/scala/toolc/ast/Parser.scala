@@ -43,13 +43,17 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'ElseOpt ::= ELSE() ~ 'Statement | epsilon(),
     'Expression ::= 'Expression ~ 'Op ~ 'Expression
       | 'Expression ~ LBRACKET() ~ 'Expression ~ RBRACKET()
+      | BANG() ~ 'Expression
       | 'Expression ~ DOT() ~ LENGTH()
       | 'Expression ~ DOT() ~ 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN()
-      | INTLITSENT | STRINGLITSENT
+      | 'Expression ~ 'Identifier ~ 'ExprTerm
+      | 'ExprTerm,
+      
+      
+    'ExprTerm ::= INTLITSENT | STRINGLITSENT
       | TRUE() | FALSE() | 'Identifier | THIS()
       | NEW() ~ INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET()
       | NEW() ~ 'Identifier ~ LPAREN() ~ RPAREN()
-      | BANG() ~ 'Expression
       | LPAREN() ~ 'Expression ~ RPAREN(),
     'Args ::= epsilon() | 'Expression ~ 'ExprList,
     'ExprList ::= epsilon() | COMMA() ~ 'Expression ~ 'ExprList,
@@ -125,7 +129,7 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     
     'ExprBracket ::= 'ExprTerm ~ 'OpDot,
     
-    'OpDot ::= DOT() ~ 'DotEnd ~ 'OpDot | epsilon(),
+    'OpDot ::= DOT() ~ 'DotEnd ~ 'OpDot | 'Identifier ~ 'ExprTerm ~ 'OpDot | epsilon(),
     'DotEnd ::= LENGTH() | 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN(),
         
     'ExprTerm ::= INTLITSENT | STRINGLITSENT

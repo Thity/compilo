@@ -129,6 +129,9 @@ class ASTConstructorLL1 extends ASTConstructor {
             val m = MethodCall(e, constructId(id), constructList(args, constructExpr, hasComma = true)).setPos(e)
             constructOperation(m, opDot)
         }
+      case Node('OpDot ::= List('Identifier, 'ExprTerm, 'OpDot), List(id, expr, opDot)) =>
+        val m = MethodCall(e, constructId(id), List(constructExpr(expr))).setPos(e)
+        constructOperation(m, opDot)
     }
   }
   

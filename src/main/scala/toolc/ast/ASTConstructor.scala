@@ -149,6 +149,9 @@ class ASTConstructor {
       case Node('Expression ::= List('Expression, DOT(), 'Identifier, LPAREN(), 'Args, RPAREN()), List(e, _, id, _, as, _)) =>
         val pe = constructExpr(e)
         MethodCall(pe, constructId(id), constructList(as, constructExpr, hasComma = true)).setPos(pe)
+      case Node('Expression ::= List('Expression, 'Identifier, 'ExprTerm), List(e, id, expr)) =>
+        val pe = constructExpr(e)
+        MethodCall(pe, constructId(id), List(constructExpr(expr))).setPos(pe)
       case Node('Expression ::= List(INTLITSENT), List(Leaf(it@INTLIT(i)))) =>
         IntLit(i).setPos(it)
       case Node('Expression ::= List(STRINGLITSENT), List(Leaf(st@STRINGLIT(s)))) =>
