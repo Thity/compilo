@@ -24,7 +24,7 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
     'VarDeclaration ::= VAR() ~ 'Param ~ 'InstructionEnd,
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(),
-    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ 'Params ~ RPAREN() ~
+    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~
           'J ~ COLON() ~ 'J ~ 'Type ~ EQSIGN() ~ 'J ~ LBRACE() ~ 'J ~ 'VarDecs ~ 'Stmts ~
           RETURN() ~ 'J ~ 'Expression ~ 'InstructionEndOpt ~ RBRACE() ~ 'J,
     'Params ::= epsilon() | 'Param ~ 'ParamList,
@@ -59,7 +59,7 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'ExprList ::= epsilon() | COMMA() ~ 'J ~ 'Expression ~ 'ExprList,
     'Op ::= AND() ~ 'J | OR() ~ 'J | EQUALS() ~ 'J | LESSTHAN() ~ 'J | PLUS() ~ 'J | MINUS() ~ 'J | TIMES() ~ 'J | DIV() ~ 'J,
     'Identifier ::= IDSENT,
-    'J ::= epsilon() | LINEJUMP() ~ 'J //Line jumps
+    'J ::= LINEJUMP() ~ 'J | epsilon() //Line jumps
   ))
 
   // TODO: Transform this to an LL(1) grammar
@@ -74,7 +74,7 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
     'VarDeclaration ::= VAR() ~ 'Param ~ 'InstructionEnd,
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(), 
-    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ 'Params ~ RPAREN() ~
+    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~
           'J ~ COLON() ~ 'J ~ 'Type ~ EQSIGN() ~ 'J ~ LBRACE() ~ 'J ~ 'VarDecs ~ 'Stmts ~
           RETURN() ~ 'J ~ 'Expression ~ 'InstructionEndOpt ~ RBRACE() ~ 'J,
     'Params ::= epsilon() | 'Param ~ 'ParamList,

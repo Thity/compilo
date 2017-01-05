@@ -20,7 +20,7 @@ class ASTConstructor {
   }
   def constructMain(ptree: NodeOrLeaf[Token]): MainObject = {
     ptree match {
-      case Node('MainObject ::= _, List(Leaf(prog), objid, _, stmts, _)) =>
+      case Node('MainObject ::= _, List(Leaf(prog), _, objid, _, _, stmts, _, _)) =>
         MainObject(constructId(objid), constructList(stmts, constructStatement)).setPos(prog)
     }
   }
@@ -29,7 +29,7 @@ class ASTConstructor {
     ptree match {
       case Node(
         'ClassDeclaration ::=  _,
-        List(Leaf(cls), id, optextends, Node('ClassBody ::= _, List(_, vardecls, methoddecls, _)))
+        List(Leaf(cls), _, id, optextends, Node('ClassBody ::= _, List(_, _, vardecls, methoddecls, _, _)))
       ) =>
         ClassDecl(
           constructId(id),
@@ -48,7 +48,7 @@ class ASTConstructor {
   }
 
   def constructMethodDecl(ptree: NodeOrLeaf[Token]): MethodDecl = ptree match {
-    case Node('MethodDeclaration ::= _, List(Leaf(meth), id, _, params, _, _, tpe, _, _, vardecs, stmts, _, expr, _, _)) =>
+    case Node('MethodDeclaration ::= _, List(Leaf(meth), _, id, _, params, _, _, _, _, tpe, _, _, _, _, vardecs, stmts, _, _, expr, _, _, _)) =>
       MethodDecl(
         constructId(id),
         constructList(params, constructParam, hasComma = true),
@@ -61,7 +61,7 @@ class ASTConstructor {
 
   def constructParam(ptree: NodeOrLeaf[Token]): Formal = {
     ptree match {
-      case Node('Param ::= _, List(id, _, tpe)) =>
+      case Node('Param ::= _, List(id, _, _, tpe)) =>
         val pid = constructId(id)
         Formal(constructType(tpe), pid).setPos(pid)
     }
@@ -78,7 +78,7 @@ class ASTConstructor {
     ptree match {
       case Node('Type ::= _, List(Leaf(i@INT()))) =>
         IntType().setPos(i)
-      case Node('Type ::= List(INT(), LBRACKET(), RBRACKET()), List(Leaf(i@INT()), _, _)) =>
+      case Node('Type ::= List(INT(), LBRACKET(), _, RBRACKET()), List(Leaf(i@INT()), _, _, _)) =>
         IntArrayType().setPos(i)
       case Node('Type ::= _, List(Leaf(b@BOOLEAN()))) =>
         BooleanType().setPos(b)
@@ -93,26 +93,26 @@ class ASTConstructor {
 
   def constructStatement(ptree: NodeOrLeaf[Token]): StatTree = {
     ptree match {
-      case Node('Statement ::= IF() :: _, List(Leaf(iff), _, expr, _, matchif, eopt)) =>
+      case Node('Statement ::= IF() :: _, List(Leaf(iff), _, _, _, expr, _, _, matchif, eopt)) =>
         If(constructExpr(expr), constructStatement(matchif), constructOption(eopt, constructStatement)).setPos(iff)
-      case Node('Statement ::= IF() :: _, List(Leaf(iff), _, expr, _, thenif, _, eif)) =>
+      case Node('Statement ::= IF() :: _, List(Leaf(iff), _, _, _, expr, _, _, thenif, _, eif)) =>
         If(constructExpr(expr), constructStatement(thenif), Some(constructStatement(eif))).setPos(iff)
       case Node(_ ::= List('SimpleStat), List(simpstat)) =>
         constructStatement(simpstat)
-      case Node('SimpleStat ::= LBRACE() :: _, List(Leaf(lbr), stmts, _)) =>
+      case Node('SimpleStat ::= LBRACE() :: _, List(Leaf(lbr), _, stmts, _, _)) =>
         Block(constructList(stmts, constructStatement)).setPos(lbr)
-      case Node('SimpleStat ::= WHILE() :: _, List(Leaf(whl), _, expr, _, stmt)) =>
+      case Node('SimpleStat ::= WHILE() :: _, List(Leaf(whl), _, _, _, expr, _, _, stmt)) =>
         While(constructExpr(expr), constructStatement(stmt)).setPos(whl)
-      case Node('SimpleStat ::= PRINTLN() :: _, List(Leaf(prln), _, expr, _, _)) =>
+      case Node('SimpleStat ::= PRINTLN() :: _, List(Leaf(prln), _, _, _, expr, _, _)) =>
         Println(constructExpr(expr)).setPos(prln)
-      case Node('SimpleStat ::= DO() :: _, List(Leaf(d), _, expr, _, _)) =>
+      case Node('SimpleStat ::= DO() :: _, List(Leaf(d), _, _, _, expr, _, _)) =>
         DoExpr(constructExpr(expr)).setPos(d)
       case Node('SimpleStat ::= rhs, List(id, idstat)) =>
         val pid = constructId(id)
         idstat match {
-          case Node(_ ::= EQSIGN() :: _, List(_, expr, _)) =>
+          case Node(_ ::= EQSIGN() :: _, List(_, _, expr, _)) =>
             Assign(pid, constructExpr(expr)).setPos(pid)
-          case Node(_, List(_, index, _, _, expr, _)) =>
+          case Node(_, List(_, _, index, _, _, _, _, expr, _)) =>
             ArrayAssign(pid, constructExpr(index), constructExpr(expr)).setPos(pid)
         }
     }
@@ -135,18 +135,18 @@ class ASTConstructor {
 
   def constructExpr(ptree: NodeOrLeaf[Token]): ExprTree = {
     ptree match {
-      case Node('Expression ::= List('Expression, 'Op, 'Expression), List(e1, op, e2)) =>
+      case Node('Expression ::= List('Expression, 'Op, _, 'Expression), List(e1, op, _, e2)) =>
         val pe1 = constructExpr(e1)
         val pe2 = constructExpr(e2)
         constructOp(op)(pe1, pe2).setPos(pe1)
-      case Node('Expression ::= List('Expression, LBRACKET(), 'Expression, RBRACKET()), List(e1, _, e2, _)) =>
+      case Node('Expression ::= List('Expression, LBRACKET(), _, 'Expression, _, RBRACKET()), List(e1, _, _, e2, _, _)) =>
         val pe1 = constructExpr(e1)
         val pe2 = constructExpr(e2)
         ArrayRead(pe1, pe2).setPos(pe1)
-      case Node('Expression ::= List('Expression, DOT(), LENGTH()), List(e, _, _)) =>
+      case Node('Expression ::= List('Expression, DOT(), _, LENGTH()), List(e, _, _, _)) =>
         val pe = constructExpr(e)
         ArrayLength(pe).setPos(pe)
-      case Node('Expression ::= List('Expression, DOT(), 'Identifier, LPAREN(), 'Args, RPAREN()), List(e, _, id, _, as, _)) =>
+      case Node('Expression ::= List('Expression, DOT(), _, 'Identifier, LPAREN(), _, 'Args, RPAREN()), List(e, _, _, id, _, _, as, _)) =>
         val pe = constructExpr(e)
         MethodCall(pe, constructId(id), constructList(as, constructExpr, hasComma = true)).setPos(pe)
       case Node('Expression ::= List(INTLITSENT), List(Leaf(it@INTLIT(i)))) =>
@@ -162,13 +162,13 @@ class ASTConstructor {
         Variable(pid).setPos(pid)
       case Node('Expression ::=  _, List(Leaf(tt@THIS()))) =>
         This().setPos(tt)
-      case Node('Expression ::= List(NEW(), INT(), LBRACKET(), 'Expression, RBRACKET()), List(Leaf(nt), _, _, e, _)) =>
+      case Node('Expression ::= List(NEW(), _, INT(), _, LBRACKET(), _, 'Expression, _, RBRACKET()), List(Leaf(nt), _, _, _, _, _, e, _, _)) =>
         NewIntArray(constructExpr(e)).setPos(nt)
-      case Node('Expression ::= List(NEW(), 'Identifier, LPAREN(), RPAREN()), List(Leaf(nt), id, _, _)) =>
+      case Node('Expression ::= List(NEW(), _, 'Identifier, LPAREN(), _, RPAREN()), List(Leaf(nt), _, id, _, _, _)) =>
         New(constructId(id)).setPos(nt)
-      case Node('Expression ::= List(BANG(), 'Expression), List(Leaf(bt), e)) =>
+      case Node('Expression ::= List(BANG(), _, 'Expression), List(Leaf(bt), _, e)) =>
         Not(constructExpr(e)).setPos(bt)
-      case Node('Expression ::= List(LPAREN(), 'Expression, RPAREN()), List(Leaf(lp), e, _)) =>
+      case Node('Expression ::= List(LPAREN(), _, 'Expression, RPAREN()), List(Leaf(lp), _, e, _)) =>
         constructExpr(e).setPos(lp)
     }
   }
@@ -211,7 +211,7 @@ class ASTConstructor {
   def constructOption[A](ptree: NodeOrLeaf[Token], constructor: NodeOrLeaf[Token] => A): Option[A] = {
     ptree match {
       case Node(_, List()) => None
-      case Node(_, List(_, t)) =>
+      case Node(_, List(_, _, t)) =>
         Some(constructor(t))
     }
   }
