@@ -24,7 +24,8 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
     'VarDeclaration ::= VAR() ~ 'Param ~ SEMICOLON(),
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(),
-    'MethodDeclaration ::= DEF() ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'MethodDeclaration ::= DEF() ~ 'Identifier ~ 'ParamsOpt ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'ParamsOpt ::= LPAREN() ~ 'Params ~ RPAREN() | epsilon(),
     'Params ::= epsilon() | 'Param ~ 'ParamList,
     'ParamList ::= epsilon() | COMMA() ~ 'Param ~ 'ParamList,
     'Param ::= 'Identifier ~ COLON() ~ 'Type,
@@ -45,16 +46,20 @@ object Parser extends Pipeline[Iterator[Token], Program] {
       | 'Expression ~ LBRACKET() ~ 'Expression ~ RBRACKET()
       | BANG() ~ 'Expression
       | 'Expression ~ DOT() ~ LENGTH()
-      | 'Expression ~ DOT() ~ 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN()
+
+      | 'Expression ~ DOT() ~ 'Identifier ~ 'ArgsOpt
       | 'Expression ~ 'Identifier ~ 'ExprTerm
       | 'ExprTerm,
       
+    'ArgsOpt ::= LPAREN() ~ 'Args ~ RPAREN() | epsilon(),
+
       
     'ExprTerm ::= INTLITSENT | STRINGLITSENT
       | TRUE() | FALSE() | 'Identifier | THIS()
       | NEW() ~ INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET()
-      | NEW() ~ 'Identifier ~ LPAREN() ~ RPAREN()
+      | NEW() ~ 'Identifier ~ 'ParenOpt
       | LPAREN() ~ 'Expression ~ RPAREN(),
+    'ParenOpt ::= LPAREN() ~ RPAREN() | epsilon(),
     'Args ::= epsilon() | 'Expression ~ 'ExprList,
     'ExprList ::= epsilon() | COMMA() ~ 'Expression ~ 'ExprList,
     'Op ::= AND() | OR() | EQUALS() | LESSTHAN() | PLUS() | MINUS() | TIMES() | DIV(),
@@ -73,7 +78,8 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
     'VarDeclaration ::= VAR() ~ 'Param ~ SEMICOLON(),
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(), 
-    'MethodDeclaration ::= DEF() ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'MethodDeclaration ::= DEF() ~ 'Identifier ~ 'ParamsOpt ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'ParamsOpt ::= LPAREN() ~ 'Params ~ RPAREN() | epsilon(),
     'Params ::= epsilon() | 'Param ~ 'ParamList,
     'ParamList ::= epsilon() | COMMA() ~ 'Param ~ 'ParamList,
     'Param ::= 'Identifier ~ COLON() ~ 'Type,
@@ -130,15 +136,20 @@ object Parser extends Pipeline[Iterator[Token], Program] {
     'ExprBracket ::= 'ExprTerm ~ 'OpDot,
     
     'OpDot ::= DOT() ~ 'DotEnd ~ 'OpDot | 'Identifier ~ 'ExprTerm ~ 'OpDot | epsilon(),
-    'DotEnd ::= LENGTH() | 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN(),
+
+    'DotEnd ::= LENGTH() | 'Identifier ~ 'ArgsOpt,
+    
+    'ArgsOpt ::= LPAREN() ~ 'Args ~ RPAREN() | epsilon(),
         
     'ExprTerm ::= INTLITSENT | STRINGLITSENT
       | TRUE() | FALSE() | 'Identifier | THIS()
       | NEW() ~ 'NewEnd
       | LPAREN() ~ 'Expression ~ RPAREN(),  
       
-    'NewEnd ::= 'Identifier ~ LPAREN() ~ RPAREN()
-      | INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET(), 
+    'NewEnd ::= 'Identifier ~ 'ParenOpt
+      | INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET(),
+      
+    'ParenOpt ::= LPAREN() ~ RPAREN() | epsilon(),
    // End of 'Expression changes
       
       
