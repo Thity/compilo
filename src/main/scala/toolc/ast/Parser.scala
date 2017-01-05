@@ -15,133 +15,147 @@ object Parser extends Pipeline[Iterator[Token], Program] {
 
   val toolGrammar = Grammar('Program, List[Rules[Token]](
     'Program ::= 'MainObject ~ 'ClassDecls ~ EOF(),
-    'MainObject ::= PROGRAM() ~ 'Identifier ~ LBRACE() ~ 'Stmts ~ RBRACE(),
+    'MainObject ::= PROGRAM() ~ 'J ~ 'Identifier ~ LBRACE() ~ 'J ~ 'Stmts ~ RBRACE() ~ 'J,
     'Stmts ::= 'Statement ~ 'Stmts | epsilon(),
     'ClassDecls ::= 'ClassDeclaration ~ 'ClassDecls | epsilon(),
-    'ClassDeclaration ::= CLASS() ~ 'Identifier ~ 'OptExtends ~ 'ClassBody,
-    'OptExtends ::= epsilon() | EXTENDS() ~ 'Identifier,
-    'ClassBody ::= LBRACE() ~ 'VarDecs ~ 'MethodDecs ~ RBRACE(),
+    'ClassDeclaration ::= CLASS() ~ 'J ~ 'Identifier ~ 'OptExtends ~ 'ClassBody,
+    'OptExtends ::= epsilon() | EXTENDS() ~ 'J ~ 'Identifier,
+    'ClassBody ::= LBRACE() ~ 'J ~ 'VarDecs ~ 'MethodDecs ~ RBRACE() ~ 'J,
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
-    'VarDeclaration ::= VAR() ~ 'Param ~ SEMICOLON(),
+    'VarDeclaration ::= VAR() ~ 'Param ~ 'InstructionEnd,
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(),
-    'MethodDeclaration ::= DEF() ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ 'Params ~ RPAREN() ~
+          'J ~ COLON() ~ 'J ~ 'Type ~ EQSIGN() ~ 'J ~ LBRACE() ~ 'J ~ 'VarDecs ~ 'Stmts ~
+          RETURN() ~ 'J ~ 'Expression ~ 'InstructionEndOpt ~ RBRACE() ~ 'J,
     'Params ::= epsilon() | 'Param ~ 'ParamList,
-    'ParamList ::= epsilon() | COMMA() ~ 'Param ~ 'ParamList,
-    'Param ::= 'Identifier ~ COLON() ~ 'Type,
-    'Type ::= INT() ~ LBRACKET() ~ RBRACKET() | BOOLEAN() | INT() | STRING() | 'Identifier,
-    'Statement ::= IF() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf ~ 'ElseOpt
+    'ParamList ::= epsilon() | COMMA() ~ 'J ~ 'Param ~ 'ParamList,
+    'Param ::= 'Identifier ~ COLON() ~ 'J ~ 'Type,
+    'Type ::= INT() ~ 'J ~ LBRACKET() ~ 'J ~ RBRACKET() ~ 'J | BOOLEAN() ~ 'J | INT() ~ 'J | STRING() ~ 'J | 'Identifier,
+    'Statement ::= IF() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf ~ 'ElseOpt
       | 'SimpleStat,
-    'MatchedIf ::= IF() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf ~ ELSE() ~ 'MatchedIf
+    'MatchedIf ::= IF() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf ~ ELSE() ~ 'J ~ 'MatchedIf
       | 'SimpleStat,
-    'SimpleStat ::= LBRACE() ~ 'Stmts ~ RBRACE()
-      | WHILE() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf
-      | PRINTLN() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ SEMICOLON()
+    'SimpleStat ::= LBRACE() ~ 'J ~ 'Stmts ~ RBRACE() ~ 'J
+      | WHILE() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf
+      | PRINTLN() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'InstructionEnd
       | 'Identifier ~ 'IdStat
-      | DO() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ SEMICOLON(),
-    'IdStat ::= EQSIGN() ~ 'Expression ~ SEMICOLON()
-      | LBRACKET() ~ 'Expression ~ RBRACKET() ~ EQSIGN() ~ 'Expression ~ SEMICOLON(),
-    'ElseOpt ::= ELSE() ~ 'Statement | epsilon(),
+      | DO() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'InstructionEnd,
+    'IdStat ::= EQSIGN() ~ 'J ~ 'Expression ~ 'InstructionEnd
+      | LBRACKET() ~ 'J ~ 'Expression ~ RBRACKET() ~ 'J ~ EQSIGN() ~ 'J ~ 'Expression ~ 'InstructionEnd,
+    'ElseOpt ::= ELSE() ~ 'J ~ 'Statement | epsilon(),
+    'InstructionEndOpt ::= epsilon() | 'InstructionEnd,
+    'InstructionEnd ::= SEMICOLON() ~ 'J | LINEJUMP() ~ 'J,
     'Expression ::= 'Expression ~ 'Op ~ 'Expression
-      | 'Expression ~ LBRACKET() ~ 'Expression ~ RBRACKET()
-      | 'Expression ~ DOT() ~ LENGTH()
-      | 'Expression ~ DOT() ~ 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN()
+      | 'Expression ~ LBRACKET() ~ 'J ~ 'Expression ~ RBRACKET()
+      | 'Expression ~ DOT() ~ 'J ~ LENGTH()
+      | 'Expression ~ DOT() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ 'Args ~ RPAREN()
       | INTLITSENT | STRINGLITSENT
       | TRUE() | FALSE() | 'Identifier | THIS()
-      | NEW() ~ INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET()
-      | NEW() ~ 'Identifier ~ LPAREN() ~ RPAREN()
-      | BANG() ~ 'Expression
-      | LPAREN() ~ 'Expression ~ RPAREN(),
+      | NEW() ~ 'J ~ INT() ~ 'J ~ LBRACKET() ~ 'J ~ 'Expression ~ RBRACKET()
+      | NEW() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ RPAREN()
+      | BANG() ~ 'J ~ 'Expression
+      | LPAREN() ~ 'J ~ 'Expression ~ RPAREN(),
     'Args ::= epsilon() | 'Expression ~ 'ExprList,
-    'ExprList ::= epsilon() | COMMA() ~ 'Expression ~ 'ExprList,
-    'Op ::= AND() | OR() | EQUALS() | LESSTHAN() | PLUS() | MINUS() | TIMES() | DIV(),
-    'Identifier ::= IDSENT
+    'ExprList ::= epsilon() | COMMA() ~ 'J ~ 'Expression ~ 'ExprList,
+    'Op ::= AND() ~ 'J | OR() ~ 'J | EQUALS() ~ 'J | LESSTHAN() ~ 'J | PLUS() ~ 'J | MINUS() ~ 'J | TIMES() ~ 'J | DIV() ~ 'J,
+    'Identifier ::= IDSENT,
+    'J ::= epsilon() | LINEJUMP() ~ 'J //Line jumps
   ))
 
   // TODO: Transform this to an LL(1) grammar
   val ll1Grammar = Grammar('Program, List[Rules[Token]](
     'Program ::= 'MainObject ~ 'ClassDecls ~ EOF(),
-    'MainObject ::= PROGRAM() ~ 'Identifier ~ LBRACE() ~ 'Stmts ~ RBRACE(),
+    'MainObject ::= PROGRAM() ~ 'J ~ 'Identifier ~ LBRACE() ~ 'J ~ 'Stmts ~ RBRACE() ~ 'J,
     'Stmts ::= 'Statement ~ 'Stmts | epsilon(),
     'ClassDecls ::= 'ClassDeclaration ~ 'ClassDecls | epsilon(),
-    'ClassDeclaration ::= CLASS() ~ 'Identifier ~ 'OptExtends ~ 'ClassBody,
-    'OptExtends ::= epsilon() | EXTENDS() ~ 'Identifier,
-    'ClassBody ::= LBRACE() ~ 'VarDecs ~ 'MethodDecs ~ RBRACE(),
+    'ClassDeclaration ::= CLASS() ~ 'J ~ 'Identifier ~ 'OptExtends ~ 'ClassBody,
+    'OptExtends ::= epsilon() | EXTENDS() ~ 'J ~ 'Identifier,
+    'ClassBody ::= LBRACE() ~ 'J ~ 'VarDecs ~ 'MethodDecs ~ RBRACE() ~ 'J,
     'VarDecs ::= 'VarDeclaration ~ 'VarDecs | epsilon(),
-    'VarDeclaration ::= VAR() ~ 'Param ~ SEMICOLON(),
+    'VarDeclaration ::= VAR() ~ 'Param ~ 'InstructionEnd,
     'MethodDecs ::= 'MethodDeclaration ~ 'MethodDecs | epsilon(), 
-    'MethodDeclaration ::= DEF() ~ 'Identifier ~ LPAREN() ~ 'Params ~ RPAREN() ~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE() ~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression ~ SEMICOLON() ~ RBRACE(),
+    'MethodDeclaration ::= DEF() ~ 'J ~ 'Identifier ~ LPAREN() ~ 'J ~ 'Params ~ RPAREN() ~
+          'J ~ COLON() ~ 'J ~ 'Type ~ EQSIGN() ~ 'J ~ LBRACE() ~ 'J ~ 'VarDecs ~ 'Stmts ~
+          RETURN() ~ 'J ~ 'Expression ~ 'InstructionEndOpt ~ RBRACE() ~ 'J,
     'Params ::= epsilon() | 'Param ~ 'ParamList,
-    'ParamList ::= epsilon() | COMMA() ~ 'Param ~ 'ParamList,
-    'Param ::= 'Identifier ~ COLON() ~ 'Type,
+    'ParamList ::= epsilon() | COMMA() ~ 'J ~ 'Param ~ 'ParamList,
+    'Param ::= 'Identifier ~ COLON() ~ 'J ~ 'Type,
     
     
     
     //The previous implementation was not LL1 (FIRST/FIRST)
     'Type ::= INT() ~ 'TypeFollow | BOOLEAN() | STRING() | 'Identifier,
-    'TypeFollow ::= LBRACKET() ~ RBRACKET() | epsilon(),
+    'TypeFollow ::= LBRACKET() ~ 'J ~ RBRACKET() | epsilon(),
     //End of 'Type changes
     
     
     
-    'Statement ::= IF() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf ~ 'ElseOpt
+    'Statement ::= IF() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf ~ 'ElseOpt
       | 'SimpleStat,
-    'MatchedIf ::= IF() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf ~ ELSE() ~ 'MatchedIf
+    'MatchedIf ::= IF() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf ~ ELSE() ~ 'J ~ 'MatchedIf
       | 'SimpleStat,
-    'SimpleStat ::= LBRACE() ~ 'Stmts ~ RBRACE()
-      | WHILE() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ 'MatchedIf
-      | PRINTLN() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ SEMICOLON()
+    'SimpleStat ::= LBRACE() ~ 'J ~ 'Stmts ~ RBRACE() ~ 'J
+      | WHILE() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'J ~ 'MatchedIf
+      | PRINTLN() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'InstructionEnd
       | 'Identifier ~ 'IdStat
-      | DO() ~ LPAREN() ~ 'Expression ~ RPAREN() ~ SEMICOLON(),
-    'IdStat ::= EQSIGN() ~ 'Expression ~ SEMICOLON()
-      | LBRACKET() ~ 'Expression ~ RBRACKET() ~ EQSIGN() ~ 'Expression ~ SEMICOLON(),
-    'ElseOpt ::= ELSE() ~ 'Statement | epsilon(),
+      | DO() ~ 'J ~ LPAREN() ~ 'J ~ 'Expression ~ RPAREN() ~ 'InstructionEnd,
+    'IdStat ::= EQSIGN() ~ 'J ~ 'Expression ~ 'InstructionEnd
+      | LBRACKET() ~ 'J ~ 'Expression ~ RBRACKET() ~ 'J ~ EQSIGN() ~ 'J ~ 'Expression ~ 'InstructionEnd,
+    'ElseOpt ::= ELSE() ~ 'J ~ 'Statement | epsilon(),
+    
+    
+    'InstructionEndOpt ::= epsilon() | 'InstructionEnd,
+    'InstructionEnd ::= SEMICOLON() ~ 'J | LINEJUMP() ~ 'J,
     
     
     
     //The previous implementation was not LL1 (left recursion),
     //This divides the operations in priority order.
     'Expression ::= 'ExprOr ~ 'OpOr,
-    'OpOr ::= OR() ~ 'Expression | epsilon(),
+    'OpOr ::= OR() ~ 'J ~ 'Expression | epsilon(),
     
     'ExprOr ::= 'ExprAnd ~ 'OpAnd,
-    'OpAnd ::= AND() ~ 'ExprOr | epsilon(),
+    'OpAnd ::= AND() ~ 'J ~ 'ExprOr | epsilon(),
         
     'ExprAnd ::= 'ExprEq ~ 'OpEq,
-    'OpEq ::= EQUALS() ~ 'ExprAnd | epsilon(),
+    'OpEq ::= EQUALS() ~ 'J ~ 'ExprAnd | epsilon(),
     
     'ExprEq ::= 'ExprLess ~ 'OpLess,
-    'OpLess ::= LESSTHAN() ~ 'ExprEq | epsilon(),
+    'OpLess ::= LESSTHAN() ~ 'J ~ 'ExprEq | epsilon(),
             
     'ExprLess ::= 'ExprPlusMinus ~ 'OpPlusMinus,
-    'OpPlusMinus ::= MINUS() ~ 'ExprLess | PLUS() ~ 'ExprLess | epsilon(),
+    'OpPlusMinus ::= MINUS() ~ 'J ~ 'ExprLess | PLUS() ~ 'J ~ 'ExprLess | epsilon(),
     
     'ExprPlusMinus ::= 'ExprTimesDiv ~ 'OpTimesDiv,
-    'OpTimesDiv ::= TIMES() ~ 'ExprPlusMinus | DIV() ~ 'ExprPlusMinus | epsilon(),
+    'OpTimesDiv ::= TIMES() ~ 'J ~ 'ExprPlusMinus | DIV() ~ 'J ~ 'ExprPlusMinus | epsilon(),
     
-    'ExprTimesDiv ::= BANG() ~ 'ExprTimesDiv | 'ExprBang,
+    'ExprTimesDiv ::= BANG() ~ 'J ~ 'ExprTimesDiv | 'ExprBang,
     
     'ExprBang ::= 'ExprBracket ~ 'OpBracket,
-    'OpBracket ::= LBRACKET() ~ 'Expression ~ RBRACKET() | epsilon(),
+    'OpBracket ::= LBRACKET() ~ 'J ~ 'Expression ~ 'J ~ RBRACKET() | epsilon(),
     
     'ExprBracket ::= 'ExprTerm ~ 'OpDot,
     
-    'OpDot ::= DOT() ~ 'DotEnd ~ 'OpDot | epsilon(),
-    'DotEnd ::= LENGTH() | 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN(),
+    'OpDot ::= DOT() ~ 'J ~ 'DotEnd ~ 'OpDot | epsilon(),
+    'DotEnd ::= LENGTH() | 'Identifier ~ LPAREN() ~ 'J ~ 'Args ~ RPAREN(),
         
     'ExprTerm ::= INTLITSENT | STRINGLITSENT
       | TRUE() | FALSE() | 'Identifier | THIS()
-      | NEW() ~ 'NewEnd
-      | LPAREN() ~ 'Expression ~ RPAREN(),  
+      | NEW() ~ 'J ~ 'NewEnd
+      | LPAREN() ~ 'J ~ 'Expression ~ 'J ~ RPAREN(),  
       
-    'NewEnd ::= 'Identifier ~ LPAREN() ~ RPAREN()
-      | INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET(), 
+    'NewEnd ::= 'Identifier ~ LPAREN() ~ 'J ~ RPAREN()
+      | INT() ~ 'J ~ LBRACKET() ~ 'J ~ 'Expression ~ 'J ~ RBRACKET(), 
    // End of 'Expression changes
       
       
       
     'Args ::= epsilon() | 'Expression ~ 'ExprList,
-    'ExprList ::= epsilon() | COMMA() ~ 'Expression ~ 'ExprList,
-    'Identifier ::= IDSENT
+    'ExprList ::= epsilon() | COMMA() ~ 'J ~ 'Expression ~ 'ExprList,
+    'Identifier ::= IDSENT,
+    
+    //Line jumps
+    'J ::= LINEJUMP() ~ 'J | epsilon()
   ))
   
 

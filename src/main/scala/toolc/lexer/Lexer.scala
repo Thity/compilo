@@ -91,9 +91,12 @@ object Lexer extends Pipeline[File, Iterator[Token]] {
     /** Gets rid of whitespaces and comments and calls readToken to get the next token. */
     @scala.annotation.tailrec
     def nextToken(): Token = {
-      while (Character.isWhitespace(currentChar)) {
+      
+      //skip spaces but not linejumps linejumps
+      while (Character.isWhitespace(currentChar) && currentChar != '\n' && currentChar != '\r') {
         consume()
       }
+      
       if (currentChar == '/' && nextChar == '/') {
         consume(2)
         // Skip until EOL
@@ -137,6 +140,7 @@ object Lexer extends Pipeline[File, Iterator[Token]] {
         
         //simple special characters
         case EndOfFile => EOF().setPos(tokenPos)
+        case '\n' | '\r' => sendSimpleToken(LINEJUMP())
         case ':' => sendSimpleToken(COLON())
         case ';' => sendSimpleToken(SEMICOLON())
         case '.' => sendSimpleToken(DOT())
