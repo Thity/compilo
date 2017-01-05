@@ -272,20 +272,34 @@ object CodeGeneration extends Pipeline[Program, Unit] {
               cGenExpr(rhs)
               ch << InvokeVirtual("java/lang/StringBuilder", "append", "(" + typeToDescr(TInt) + ")Ljava/lang/StringBuilder;")
               ch << InvokeVirtual("java/lang/StringBuilder", "toString", "()" + typeToDescr(TString))
+            case (TClass(c),any) => cGenExpr(new MethodCall(lhs,new Identifier("plus"),List(rhs)))
             case _ =>
           }
         case elem@Minus(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << ISUB
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs,new Identifier("minus"),List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << ISUB
+          }
+
         case elem@Times(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << IMUL
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs,new Identifier("times"),List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << IMUL
+          }
         case elem@Div(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << IDIV
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs,new Identifier("divide"),List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << IDIV
+          }
         case elem@LessThan(lhs, rhs) =>
           ch << ICONST_1
           cGenExpr(lhs)

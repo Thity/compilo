@@ -26,6 +26,18 @@ object TypeChecking extends Pipeline[Program, Program] {
       * Also adds missing symbols to methods in MethodCalls
       */
     def tcExpr(expr: ExprTree, expectedTps: Type*): Unit = {
+      def checkOperator(lhs: ExprTree, rhs: ExprTree,name : String): Unit = {
+        tcExpr(lhs,TInt,TObject) //Left hand can be anything
+        lhs.getType match {
+          case TClass(c) => {
+            c.lookupMethod(name) match {
+              case Some(ms) if ms.params.size == 1 => tcExpr(rhs,ms.params.head._2.getType)
+              case _ => error(s"No match for operator ${name} for object ${c}",expr)
+            }
+          }
+          case _ => tcExpr(rhs,TInt)
+        }
+      }
       expr match {
         case And(lhs, rhs) =>
           tcExpr(lhs, TBoolean)
@@ -36,17 +48,22 @@ object TypeChecking extends Pipeline[Program, Program] {
         case Not(expr) =>
           tcExpr(expr, TBoolean)
         case Plus(lhs, rhs) =>
-          tcExpr(lhs, TInt, TString)
-          tcExpr(rhs, TInt, TString)
+          tcExpr(lhs,TInt,TObject,TString) //Left hand can be anything
+          lhs.getType match {
+            case TClass(c) => {
+              c.lookupMethod("plus") match {
+                case Some(ms) if ms.params.size == 1 => tcExpr(rhs,ms.params.head._2.getType)
+                case _ => error(s"No match for operator+ for object ${c}",expr)
+              }
+            }
+            case _ => tcExpr(rhs,TInt,TString)
+          }
         case Minus(lhs, rhs) =>
-          tcExpr(lhs, TInt)
-          tcExpr(rhs, TInt)
+          checkOperator(lhs,rhs,"minus")
         case Times(lhs, rhs) =>
-          tcExpr(lhs, TInt)
-          tcExpr(rhs, TInt)
+          checkOperator(lhs,rhs,"times")
         case Div(lhs, rhs) =>
-          tcExpr(lhs, TInt)
-          tcExpr(rhs, TInt)
+          checkOperator(lhs,rhs,"divide")
         case LessThan(lhs, rhs) =>
           tcExpr(lhs, TInt)
           tcExpr(rhs, TInt)
