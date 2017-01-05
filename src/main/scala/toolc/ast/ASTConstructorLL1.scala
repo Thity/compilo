@@ -91,7 +91,7 @@ class ASTConstructorLL1 extends ASTConstructor {
       
       case Node('ExprTerm ::= List(NEW(), 'NewEnd), List(Leaf(nt), e)) => constructExpr(e).setPos(nt)
       
-      case Node('NewEnd ::= List('Identifier, LPAREN(), RPAREN()), List(id, _, _)) =>
+      case Node('NewEnd ::= List('Identifier, 'ParenOpt), List(id, _)) =>
         New(constructId(id))
         
       case Node('NewEnd ::= List(INT(), LBRACKET(), 'Expression, RBRACKET()), List(_, _, e, _)) =>
@@ -125,10 +125,18 @@ class ASTConstructorLL1 extends ASTConstructor {
             val a = ArrayLength(e).setPos(e)
             constructOperation(a, opDot)
              
-          case Node('DotEnd ::= _, List(id, _, args, _)) =>
-            val m = MethodCall(e, constructId(id), constructList(args, constructExpr, hasComma = true)).setPos(e)
-            constructOperation(m, opDot)
+          case Node('DotEnd ::= _, List(id, argsOpt)) => argsOpt match {
+            case Node('ArgsOpt ::= LPAREN() :: _, List(_, args, _)) =>
+              val m = MethodCall(e, constructId(id), constructList(args, constructExpr, hasComma = true)).setPos(e)
+              constructOperation(m, opDot)
+            case Node('ArgsOpt ::= _, List()) =>
+              val m = MethodCall(e, constructId(id), List()).setPos(e)
+              constructOperation(m, opDot)
+          }
         }
+      case Node('OpDot ::= List('Identifier, 'ExprTerm, 'OpDot), List(id, expr, opDot)) =>
+        val m = MethodCall(e, constructId(id), List(constructExpr(expr))).setPos(e)
+        constructOperation(m, opDot)
     }
   }
   
