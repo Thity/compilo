@@ -15,7 +15,7 @@ class Computer {
         j = 0;
         while(j < 3) {
             println(value.toString() + " ~= " + new Real().init(0,10) evalFrac value.toString());
-            value = value + (this getTerm j);
+            value = value.plus(this getTerm j);
             j = j + 1;
         }
         println(value.toString() + " ~= " + new Real().init(0,10) evalFrac value.toString());
@@ -30,7 +30,7 @@ class Computer {
         while(j < 7) {
             println(inter.toString());
             value = this.getTerm(j);
-            inter = inter + (new Real().init(0,10).evalFrac(value));
+            inter = inter.plus(new Real().init(0,10).evalFrac(value));
         
             j = j + 1;
         }
@@ -50,7 +50,7 @@ class Computer {
         second = new Frac().init(2, 8 * i + 4);
         third  = new Frac().init(1, 8 * i + 5);
         fourth = new Frac().init(1, 8 * i + 6);
-        par = first - second  - third  - fourth;
+        par = first minus second  minus third  minus fourth;
 
         return par times (new Frac().init(1, this sixteenPow i));
     }
@@ -140,15 +140,15 @@ class Frac {
     }
 
     def minus(other : Frac) : Frac = {
-        return this + (other.negative());
+        return this.plus(other.negative());
     }
 
     def times(other : Frac) : Frac = {
         return (new Frac()).init(numerator * other.getNumerator(), denominator * other.getDenominator()).simplify().setPos(this.isPos() && other.isPos() || !this.isPos() && !other.isPos());
     }
 
-    def divide(other : Frac) : Frac = {
-        return this times other.inverse();
+    def divided(other : Frac) : Frac = {
+        return this times (other.inverse());
     }
 
     def inverse() : Frac = {

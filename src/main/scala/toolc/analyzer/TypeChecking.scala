@@ -63,7 +63,7 @@ object TypeChecking extends Pipeline[Program, Program] {
         case Times(lhs, rhs) =>
           checkOperator(lhs,rhs,"times")
         case Div(lhs, rhs) =>
-          checkOperator(lhs,rhs,"divide")
+          checkOperator(lhs,rhs,"divided")
         case LessThan(lhs, rhs) =>
           tcExpr(lhs, TInt)
           tcExpr(rhs, TInt)

@@ -1,0 +1,138 @@
+\section{Introduction}
+
+\textnormal{During the semester, we implemented an interpreter and a compiler in
+  scala for a simple object oriented programming language : Tool. The coding
+  constraints for this language are far more restrictive as in scala. We chose
+  to add some improvements, generally inspired from scala, to this language and
+  permit more coding freedom.}
+\textnormal{In order to add more coding freedom, we implemented 3 different problems:}
+
+\begin{itemize}
+\item Semicolon interference
+\item Infix Operations
+\item Parameterless calls
+\end{itemize}
+
+\textnormal{To write the initial compiler and interpreter we divided the problem
+  in a 5 stage pipeline.}
+
+\begin{lstlisting}
+Lexer $\rightarrow$ Parser $\rightarrow$ Name Analysis $\rightarrow$ Type Check
+$\rightarrow$ Code Constructor
+\end{lstlisting}
+
+\subsection{Lexer}
+\textnormal{The Lexer is the step where we filter the useful parts of the input
+  text. For each chain of characters we will define a Token, for example :}
+\vfill
+\begin{lstlisting}
+; -> SEMICOLON
+while -> WHILE
+charly -> ID
+\end{lstlisting}
+\vfill
+\textnormal{The challenges of the lexer are :}
+\begin{itemize}
+\item Define the tokens we need
+\item Filter white spaces and comments
+\end{itemize}
+
+\textnormal{After the lexer runs, we get a chain of tokens as the result. For
+  example :}
+\begin{lstlisting}
+def foo(): Int ...
+\end{lstlisting}
+\textmd{Becomes}
+\begin{lstlisting}
+DEF() ~ ID() ~ LBRACKET() 
+~ RBRACKET() ~ COLON() ~ INT()...
+\end{lstlisting}
+
+\textnormal{In the case of our extension, we had to add the following new token
+  for the semicolon interference: LINEJUMP that will make a token out of
+  '\textbackslash r' and '\textbackslash n' characters.}
+
+\subsection{Parser}
+\textnormal{Parser is the step where we define the grammar of the language and
+  then transform it into an abstract form. The grammar is the set of rules that
+  the code structure must follow. The best way to parse a list of tokens is to
+  generate an Abstract Syntax Tree (AST).}
+
+\textnormal{The challenges of the parser are :}
+\begin{itemize}
+\item In order to parse the tree in linear time, we must have the grammar in
+  LL1, this might be sometimes impossible unless we put some conditions in the
+  grammar
+\item Create the tree nodes depending on the those conditions.
+\end{itemize}
+
+\textnormal{After the parser runs, we get an Abstract Syntax Tree (AST).\\}
+
+\textnormal{In the case of our extension, many changes had to be done in the
+  grammar and constructor that we will explain in the other chapters.}
+
+\subsection{Name Analysis}
+\textnormal{Name Analysis is the step where we check if each variable call has
+  the right conditions.}
+
+\textnormal{In order to do this we pass throught the tree and create a 'Symbol'
+  for each identifier. When creating these symbols we check that conditions as
+  following hold:}
+
+\begin{itemize}
+\item Scope of the variable, that means for example if we define it in a
+  function, it must only be accesed from that function. 
+\item Existence, which means that an accessed variable must be defined before.
+\item Etc..
+\end{itemize}
+
+\textnormal{In the case of our extension, we didn't make any changes for this
+  part. }
+
+\subsection{Type Check}
+
+\textnormal{Type Checking is the step where we check if the types of expressions
+  match what we expect them to be. For example: }
+
+\begin{lstlisting}
+  program Program {
+    var b : B;
+    var array : Int[];
+    do(b.foo() + 1); // success, check return of super class
+    do(array + b.foo()); // fail, sum of int with an int array
+  }
+  class A { def foo(): Int = {<@$\ldots$@>}}
+  class B extends A {<@$\ldots$@>}
+\end{lstlisting}
+\\
+\textnormal{The challenge of the type checker is to go through the program from
+  the Leafs to the Root and to check that the Nodes have the right types.\\}
+\\
+\textnormal{In the case of our project, we changed it to allow +, -, *, /
+  operations for Class Types.\\}
+\\
+\textnormal{The Parsing, Name analyzis and Type Checking steps check if a
+  program is valid or not. If we have a valid program we are ready for the last
+  step : code generation.\\}
+
+\vfill
+\subsection{Code Generation}
+\textnormal{In this last step we end up generating JVM code from the final
+  structure we created, to be executable by the JVM. We used the 'Cafebabe'
+  library, which makes the JVM instructions creation much more easier. For
+  example:}
+
+\begin{lstlisting}
+  Node(Plus(Variable(id1),Variable(id2))
+\end{lstlisting}
+\textnormal{Generates}
+\begin{lstlisting}
+  iload_n1
+  iload_n2
+  iadd
+\end{lstlisting}
+
+\textnormal{In the case of our project, we changed it for the infix operators
+  part.}
+
+

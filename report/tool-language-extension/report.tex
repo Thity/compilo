@@ -1,0 +1,44 @@
+\documentclass[nocopyrightspace, 11pt, authoryear, preprint]{sigplanconf}
+
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{lmodern}
+\usepackage{url}
+\usepackage[breaklinks]{hyperref}
+\usepackage{breakurl}
+
+
+
+\begin{document}
+\definecolor{red}{RGB}{255,138,128}
+\definecolor{green}{RGB}{185, 246, 202}
+
+\input{tool-listings}
+
+\title{Tool language extension - Liberal Syntax \\{\small Less pain in tool}}
+
+\subtitle{EPFL, Computer Language Processing 2016-17 \\ Final Lab (mini project)}
+
+\authorinfo{Gregoire Hirt \and Thierry Bossy \and Rafael Pizarro}
+\vfill
+\today
+
+\maketitle
+
+\input{introduction}
+
+\input{semicolon_inference}
+
+\input{infix_operators}
+
+\input{parameterless_calls}
+
+\input{extensions}
+
+\def\UrlBreaks{\do\/\do-}
+\bibliographystyle{abbrvnat}
+\bibliography{bibliography}
+
+\end{document}
+

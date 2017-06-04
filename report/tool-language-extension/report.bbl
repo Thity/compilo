@@ -1,0 +1,14 @@
+\begin{thebibliography}{1}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Takalkar()]{rules_semicolon}
+J.~Takalkar.
+\newblock rules of semicolon inference.
+\newblock URL
+  \url{http://jittakal.blogspot.ch/2012/07/scala-rules-of-semicolon-inference.html}.
+
+\end{thebibliography}

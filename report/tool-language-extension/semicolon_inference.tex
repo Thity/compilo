@@ -1,0 +1,92 @@
+\section{Semicolon Inference}
+
+\textnormal{The semicolon is not required anymore at the end of an instruction
+  when the next instruction is in another line, like in scala. It is still needed
+  for a statement which precedes another instruction on the same line.}
+
+\subsection{Example}
+
+\begin{lstlisting}
+class Matrix2 {
+  def meaninglessTransformation1() : Matrix2 = {
+    var bias : Matrix2; bias.init(1,0,0,1);
+    return this.times(bias1);
+  }
+}
+\end{lstlisting}
+\textmd{Becomes}
+\begin{lstlisting}
+class Matrix2 {
+  def meaninglessTransformation1() : Matrix2 = {
+    var bias : Matrix2; bias.init(1,0,0,1)
+    return this.times(bias1)
+  }
+}
+\end{lstlisting}
+
+\subsection{Implementation}
+
+%% We first thought we had to treat this token in the grammar, but it was a very
+%%  bad idea not far from impossible.
+%% We first thought we had to treat this token in the grammar, but it was a bad
+%% idea, and all our approaches to make the grammar in LL1 failed.
+
+\textnormal{Up until now, line jumps were ignored by the lexer as any
+  whitespace. However, in order to add semicolon inference, we consider them as
+  semicolon when needed. We have defined a new token for line jumps in the lexer.
+  We first thought we had to treat this token in the grammar, but it was a very
+  bad idea not far from impossible. The semicolon inference has to be done after
+  the lexing and before the parsing. We then created a huge method in Parser.scala
+  which transforms the list of Tokens before parsing it. We helped ourselves
+  with the following simple list of rules for scala semicolon inference \cite{rules_semicolon} :} 
+
+\begin{itshape}
+  A line ending is treated as a semicolon unless one of the following conditions
+  is true :
+  \begin{itemize}
+  \item The line in question ends in a word that would not be legal as the end
+    of a statement, such as a period or an infix operator.
+  \item The next line begins with a word that cannot start a statement.
+  \item The line ends while inside parentheses (\ldots) or brackets [\ldots], because
+    these cannot contain multiple statements anyway.
+  \end{itemize}
+\end{itshape}
+
+\textnormal{We noticed that two cases were not correctly handled by these rules
+  :}
+\begin{enumerate}
+\item The multiple-lines if-statements, where we don't want the line jump to be
+  treated like a semicolon :
+  \begin{lstlisting}
+    if(condition) // no semicolon
+      do(expression) // semicolon
+  \end{lstlisting}
+\item The closing braces on the same line than the statement, where we want a
+  semicolon before '\}' even if there is no line jump :
+  \begin{lstlisting}
+    if(condition) { println("true"); }
+    else { println("false"); }
+  \end{lstlisting}
+\end{enumerate}
+
+\textnormal{The 'semicolonInference' methods takes the list of tokens resulting
+  from the token iterator then returns an adapted list with no more LINEJUMP 
+  token. This transformation consists of the following steps :}
+
+
+\begin{lstlisting}
+  def semicolonInference(list: List[Token]): List[Token]
+\end{lstlisting}
+
+\begin{itemize}
+\item Add the line jump token before each closing brace token to solve the 2nd
+  issue described above.
+\item Remove line jumps before non-starting tokens and after non-ending tokens
+\item Remove line jumps contained in parenthesis or brackets
+\item Remove line jumps placed after an if-condition (1st issue above)
+\item Transform each remaining line jump into semicolon
+\end{itemize}
+
+\textnormal{This implementation is backwards compatible, as we can mix the old
+  syntax (semicolon) and the new syntax (no semicolon) at the same time.}
+
