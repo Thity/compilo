@@ -12,7 +12,7 @@ object Tokens {
   case class EOF()        extends Token // Signifies end-of-file
   case class COLON()      extends Token // :
   case class SEMICOLON()  extends Token // ;
-  case class LINEJUMP()  extends Token // '\n' or '\r'
+  case class LINEJUMP()   extends Token // '\n' or '\r'
   case class DOT()        extends Token // .
   case class COMMA()      extends Token // ,
   case class EQSIGN()     extends Token // =

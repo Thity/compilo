@@ -1,0 +1,12 @@
+\section{Possible Extension}
+
+\textnormal{We planned to add the possibility to call a statement simply with
+  the expression, without using 'do(...)', and the possibility to call a method
+  for the 'self' object without 'this'. We guessed that it was possible to
+  implement these features keeping our grammar in LL1. It appeared that it was
+  not possible and that these updates needed another grammar. }
+
+\textnormal{One possibility for this is to encapsulate a specific non-LL1
+  grammar for the cases which brakes LL1 property (simple statement, expression
+  terminaison). The parser should have the possibility to call the 2nd grammar
+  only when it needed, and keep using LL1 grammar otherwise. }

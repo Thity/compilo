@@ -1,0 +1,66 @@
+\section{Methods as infix operators}
+\textnormal{ Methods which take only one parameter can be called as an infix
+  operator. It becomes very fun and easy to enchain such methods. With good
+  names for objects and methods, a programming instruction can looks like a
+  spoken sentence. We add the possibility to call such methods with +, -, *,
+  / operators if they are named ''plus'', ''minus'', ''times'' or ''divided''
+  respectively.}
+
+\subsection{Example}
+
+\begin{lstlisting}
+  class Matrix2 {
+    def meaninglessTransformation2() : Matrix2 = {
+      var bias1 : Matrix2; bias1.init(1,0,0,1);
+      var bias2 : Matrix2; bias2.init(1, 1, 0,0);
+      return this.times(bias1).plus(this.times(bias2));  
+    }
+  }
+\end{lstlisting}
+\textmd{Becomes}
+\begin{lstlisting}
+  class Matrix2 {
+    def meaninglessTransformation2() : Matrix2 = {
+      var bias1 : Matrix2; bias1.init(1,0,0,1);
+      var bias2 : Matrix2; bias2.init(1, 1, 0, 0);
+      return this * bias1 + this * bias2;
+    }
+  }
+\end{lstlisting}
+\subsection{Implementation}
+\textnormal{ The first step to implement this feature was to change the 'dot'
+  operation definition in the grammars. For the LL1 grammar, we had to add a
+  form to the operator, with the possibility of not having a dot, followed by an
+  identifier (method) and one single argument with parenthesis or not. }
+
+\begin{lstlisting}
+  'OpDot ::= DOT() ~ 'DotEnd ~ 'OpDot
+  | 'Identifier ~ 'ExprTerm ~ 'OpDot
+  | epsilon(),
+  'DotEnd ::= LENGTH()
+  | 'Identifier ~ LPAREN() ~ 'Args ~ RPAREN(),
+\end{lstlisting}
+
+\textnormal{ To keep our grammar LL1, we had to accept only simple expressions
+  ('ExprTerm) as argument in a method call as infix operator, and not composed
+  expressions with operator. It seems legit but should be clarified for these
+  non-accepted cases : }
+
+\begin{itemize}
+\item{Array Read: \colorbox{red}{obj meth arr[index]} is forbidden, we can use instead:\\
+    \colorbox{green}{obj.meth(arr[index])} or \colorbox{green}{obj meth
+      (arr[index])}}
+\item{Bang operation: \colorbox{red}{obj meth !expr} is forbidden, we can use instead:\\
+    \colorbox{green}{obj.meth(!expr))} or \colorbox{green}{obj meth (!expr)}}
+\item{Dot operation: \colorbox{red}{obj meth obj.meth} is not equivalent to\\
+    \colorbox{green}{obj.meth(obj.meth)} or \colorbox{green}{obj meth
+      (obj.meth)} but it's equivalent to \colorbox{red}{obj.meth(obj).meth()} \\
+    (not forbidden because of the parameterless calls feature that
+    we'll describe after.)}
+\end{itemize}
+\textnormal{A similar and simpler change was also added in the non-LL1 grammar.
+  The two constructors had to be adjusted in consequence.}
+\textnormal{The operator overloading is then done at type checking and code
+  generation stages by allowing operators expression nodes to have Class typed
+  operands if the left one has the method named after the operator. The changes
+  in the Evaluator follow the same logic. }

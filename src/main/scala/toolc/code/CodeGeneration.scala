@@ -103,6 +103,9 @@ object CodeGeneration extends Pipeline[Program, Unit] {
       for(stat <- stmts){
         cGenStat(stat)(ch, Map(), cname)
       }
+      
+      ch << RETURN
+      ch.freeze
     }
 
 
@@ -115,7 +118,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
       statement match {
         case Block(stats) =>
           stats foreach cGenStat        
-        case elem@If(expr, thn, els) =>
+        case If(expr, thn, els) =>
           val elseLabel = ch.getFreshLabel("else")
           val endLabel = ch.getFreshLabel("end")
           
@@ -131,7 +134,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           els.foreach(cGenStat)
           
           ch << Label(endLabel)
-        case elem@While(expr, stat) =>
+        case While(expr, stat) =>
           val againLabel = ch.getFreshLabel("again")
           val endLabel = ch.getFreshLabel("end")
                     
@@ -143,44 +146,27 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           ch << Goto(againLabel)
           
           ch << Label(endLabel)
-        case elem@Println(expr) => expr.getType match{
-          case TString =>
-            ch << GetStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
-            cGenExpr(expr)
-            ch << InvokeVirtual("java/io/PrintStream", "println", "(" + typeToDescr(TString) + ")V")
-          case TInt =>
-            ch << GetStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
-            cGenExpr(expr)
-            ch << InvokeVirtual("java/io/PrintStream", "println", "(" + typeToDescr(TInt) + ")V")
-          case TBoolean =>
-            ch << GetStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
-            cGenExpr(expr)
-            ch << InvokeVirtual("java/io/PrintStream", "println", "(" + typeToDescr(TBoolean) + ")V")  
-          case _ =>
-        }
-        case elem@Assign(id, expr) =>
+        case Println(expr) =>
+          ch << GetStatic("java/lang/System", "out", "Ljava/io/PrintStream;")
+          cGenExpr(expr)
+          ch << InvokeVirtual("java/io/PrintStream", "println", "(" + typeToDescr(expr.getType) + ")V")
+        case Assign(id, expr) =>
           val fieldName = id.value
-          id.getType match{
-            case TInt | TBoolean => mapping.get(fieldName) match{
-                case Some(i) =>
-                  cGenExpr(expr)
+          mapping.get(fieldName) match{
+            case Some(i) =>
+              cGenExpr(expr)
+              id.getType match{
+                case TInt | TBoolean =>
                   ch << IStore(i)
-                case None =>
-                  cGenExpr(This())
-                  cGenExpr(expr)
-                  ch << PutField(cname, fieldName, typeToDescr(TInt))
-            }
-            case _ => mapping.get(fieldName) match{
-                case Some(i) =>
-                  cGenExpr(expr)
+                case _ => 
                   ch << AStore(i)
-                case None =>
-                  cGenExpr(This())
-                  cGenExpr(expr)
-                  ch << PutField(cname, fieldName, typeToDescr(id.getType))
             }
+            case None =>
+              cGenExpr(This())
+              cGenExpr(expr)
+              ch << PutField(cname, fieldName, typeToDescr(id.getType))
           }
-        case elem@ArrayAssign(id, index, expr) =>
+        case ArrayAssign(id, index, expr) =>
           val fieldName = id.value
           mapping.get(fieldName) match{
             case Some(i) =>
@@ -190,12 +176,12 @@ object CodeGeneration extends Pipeline[Program, Unit] {
               ch << IASTORE
             case None =>
               cGenExpr(This())
-              GetField(cname, fieldName, typeToDescr(TInt))  
+              ch << GetField(cname, fieldName, typeToDescr(id.getType))  
               cGenExpr(index)
               cGenExpr(expr)
               ch << IASTORE
           }
-        case elem@DoExpr(e) =>
+        case DoExpr(e) =>
           cGenExpr(e)
           ch << POP
         case _ =>
@@ -209,7 +195,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
       ch << LineNumber(expr.line)
       
       expr match {
-        case elem@And(lhs,rhs) =>
+        case And(lhs,rhs) =>
           ch << ICONST_0
           cGenExpr(lhs)
 
@@ -221,7 +207,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           cGenExpr(rhs)
 
           ch << Label(theLabel)
-        case elem@Or(lhs,rhs) =>
+        case Or(lhs,rhs) =>
           ch << ICONST_1
           cGenExpr(lhs)
 
@@ -233,7 +219,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           cGenExpr(rhs)
 
           ch << Label(theLabel)
-        case elem@Not(expr) =>
+        case Not(expr) =>
           ch << ICONST_1
           cGenExpr(expr)
 
@@ -245,7 +231,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           ch << ICONST_0
 
           ch << Label(theLabel)
-        case elem@Plus(lhs, rhs) =>
+        case Plus(lhs, rhs) =>
           (lhs.getType, rhs.getType) match {
             case (TInt, TInt) =>
               cGenExpr(lhs)
@@ -272,21 +258,35 @@ object CodeGeneration extends Pipeline[Program, Unit] {
               cGenExpr(rhs)
               ch << InvokeVirtual("java/lang/StringBuilder", "append", "(" + typeToDescr(TInt) + ")Ljava/lang/StringBuilder;")
               ch << InvokeVirtual("java/lang/StringBuilder", "toString", "()" + typeToDescr(TString))
+            case (TClass(c), _) => cGenExpr(new MethodCall(lhs, new Identifier("plus"), List(rhs)))
             case _ =>
           }
-        case elem@Minus(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << ISUB
-        case elem@Times(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << IMUL
-        case elem@Div(lhs, rhs) =>
-          cGenExpr(lhs)
-          cGenExpr(rhs)
-          ch << IDIV
-        case elem@LessThan(lhs, rhs) =>
+        case Minus(lhs, rhs) =>
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs, new Identifier("minus"), List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << ISUB
+          }
+
+        case Times(lhs, rhs) =>
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs, new Identifier("times"), List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << IMUL
+          }
+        case Div(lhs, rhs) =>
+          lhs.getType match {
+            case TClass(c) => cGenExpr(new MethodCall(lhs, new Identifier("divided"), List(rhs)))
+            case _ =>
+              cGenExpr(lhs)
+              cGenExpr(rhs)
+              ch << IDIV
+          }
+        case LessThan(lhs, rhs) =>
           ch << ICONST_1
           cGenExpr(lhs)
           cGenExpr(rhs)
@@ -299,7 +299,7 @@ object CodeGeneration extends Pipeline[Program, Unit] {
           ch << ICONST_0
           
           ch << Label(theLabel)
-        case elem@Equals(lhs, rhs) =>
+        case Equals(lhs, rhs) =>
           (lhs.getType, rhs.getType) match {
             case (TInt, TInt) | (TBoolean, TBoolean) =>
               ch << ICONST_1
@@ -330,43 +330,45 @@ object CodeGeneration extends Pipeline[Program, Unit] {
               
               ch << Label(theLabel)
           }
-        case elem@ArrayRead(arr, index) =>
+        case ArrayRead(arr, index) =>
           cGenExpr(arr)
           cGenExpr(index)
           ch << IALOAD
-        case elem@ArrayLength(arr) =>
+        case ArrayLength(arr) =>
           cGenExpr(arr)
           ch << ARRAYLENGTH
-        case elem@NewIntArray(size) =>
+        case NewIntArray(size) =>
           cGenExpr(size)
           ch << NewArray.primitive("T_INT")
-        case elem@This() => ch << ALoad(0)
+        case This() => ch << ALoad(0)
         case mc@MethodCall(obj, meth, args) =>
           cGenExpr(obj)
           args.foreach(cGenExpr)
 
           val argsTypes = (args.map(x => typeToDescr(x.getType))).fold("")((a, b) => a + b)
           val argsTypesFormatted = "(" + argsTypes + ")"
-          ch << InvokeVirtual(typeToDescr(obj.getType), meth.value, argsTypesFormatted + typeToDescr(mc.getType))
-        case elem@New(tpe) => ch << DefaultNew(typeToDescr(tpe.getType))
-        case elem@IntLit(value) => ch << Ldc(value)
-        case elem@StringLit(value) => ch << Ldc(value)
-        case elem@True() => ch << ICONST_1
-        case elem@False() => ch << ICONST_0
-        case elem@Variable(id: Identifier) =>
+          
+          
+          ch << InvokeVirtual(typeToDescr(obj.getType, true), meth.value, argsTypesFormatted + typeToDescr(mc.getType))
+        case New(tpe) => ch << DefaultNew(typeToDescr(tpe.getType, true))
+        case IntLit(value) => ch << Ldc(value)
+        case StringLit(value) => ch << Ldc(value)
+        case True() => ch << ICONST_1
+        case False() => ch << ICONST_0
+        case Variable(id: Identifier) =>
           val fieldName = id.value
           id.getType match{
             case TInt | TBoolean => mapping.get(fieldName) match{
               case Some(i) => ch << ILoad(i)
               case None =>
                 cGenExpr(This())
-                GetField(cname, fieldName, typeToDescr(id.getType))
+                ch << GetField(cname, fieldName, typeToDescr(id.getType))
             }
             case _ => mapping.get(fieldName) match{
               case Some(i) => ch << ALoad(i)
               case None =>
                 cGenExpr(This())
-                GetField(cname, fieldName, typeToDescr(id.getType))
+                ch << GetField(cname, fieldName, typeToDescr(id.getType))
             }
           }
         case _ =>
@@ -375,12 +377,12 @@ object CodeGeneration extends Pipeline[Program, Unit] {
     
 
     // Transforms a Tool type to the corresponding JVM type description
-    def typeToDescr(t: Type): String = (t: @unchecked) match {
+    def typeToDescr(t: Type, forMethodCallObj: Boolean = false): String = (t: @unchecked) match {
       case TInt => "I"
       case TBoolean => "Z"
       case TString => "Ljava/lang/String;"
       case TIntArray => "[I"
-      case TClass(sym) => "L" + sym.name + ";"
+      case TClass(sym) => if(forMethodCallObj) sym.name else "L" + sym.name + ";"
     }
 
     /**** Main code ****/
@@ -404,4 +406,3 @@ object CodeGeneration extends Pipeline[Program, Unit] {
     generateMainClassFile(prog.main, sourceName, outDir)
   }   
 }
-

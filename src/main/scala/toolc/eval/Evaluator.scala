@@ -67,26 +67,39 @@ class Evaluator(ctx: Context, prog: Program) {
         case (StringValue(l), StringValue(r)) => StringValue(l + r)
         case (IntValue(l), StringValue(r)) => StringValue(l.toString() + r)
         case (StringValue(l), IntValue(r)) => StringValue(l + r.toString())
-        case (_, _) => StringValue("error")
+        case (ObjectValue(_), ObjectValue(_)) => evalExpr(MethodCall(lhs, Identifier("plus"), List(rhs)))
+        case (_, _) => fatal("method \"plus\" is not defined for these types")
       }
     }
     
     case Minus(lhs, rhs) => {
       val left = evalExpr(lhs)
       val right = evalExpr(rhs)
-      IntValue(left.asInt - right.asInt)
+      (left, right) match{
+        case (IntValue(l), IntValue(r)) => IntValue(l - r)
+        case (ObjectValue(_), ObjectValue(_)) => evalExpr(MethodCall(lhs, Identifier("minus"), List(rhs)))
+        case (_, _) => fatal("method \"minus\" is not defined for these types")
+      }
     }
     
     case Times(lhs, rhs) => {
       val left = evalExpr(lhs)
       val right = evalExpr(rhs)
-      IntValue(left.asInt * right.asInt)
+      (left, right) match{
+        case (IntValue(l), IntValue(r)) => IntValue(l * r)
+        case (ObjectValue(_), ObjectValue(_)) => evalExpr(MethodCall(lhs, Identifier("times"), List(rhs)))
+        case (_, _) => fatal("method \"times\" is not defined for these types")
+      }
     }
     
     case Div(lhs, rhs) => {
       val left = evalExpr(lhs)
       val right = evalExpr(rhs)
-      IntValue(left.asInt / right.asInt)
+      (left, right) match{
+        case (IntValue(l), IntValue(r)) => IntValue(l / r)
+        case (ObjectValue(_), ObjectValue(_)) => evalExpr(MethodCall(lhs, Identifier("divided"), List(rhs)))
+        case (_, _) => fatal("method \"div\" is not defined for these types")
+      }
     }
     
     case LessThan(lhs, rhs) => {

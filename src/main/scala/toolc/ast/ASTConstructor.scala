@@ -48,15 +48,26 @@ class ASTConstructor {
   }
 
   def constructMethodDecl(ptree: NodeOrLeaf[Token]): MethodDecl = ptree match {
-    case Node('MethodDeclaration ::= _, List(Leaf(meth), id, _, params, _, _, tpe, _, _, vardecs, stmts, _, expr, _, _)) =>
-      MethodDecl(
-        constructId(id),
-        constructList(params, constructParam, hasComma = true),
-        constructType(tpe),
-        constructList(vardecs, constructVarDecl),
-        constructList(stmts, constructStatement),
-        constructExpr(expr)
-      ).setPos(meth)
+    case Node('MethodDeclaration ::= _, List(Leaf(meth), id, paramsOpt, _, tpe, _, _, vardecs, stmts, _, expr, _, _)) => paramsOpt match{
+      case Node('ParamsOpt ::= LPAREN() :: _, List(_, params, _)) =>
+        MethodDecl(
+          constructId(id),
+          constructList(params, constructParam, hasComma = true),
+          constructType(tpe),
+          constructList(vardecs, constructVarDecl),
+          constructList(stmts, constructStatement),
+          constructExpr(expr)
+        ).setPos(meth)
+      case Node('ParamsOpt ::= _, List()) =>
+        MethodDecl(
+          constructId(id),
+          List(),
+          constructType(tpe),
+          constructList(vardecs, constructVarDecl),
+          constructList(stmts, constructStatement),
+          constructExpr(expr)
+        ).setPos(meth)
+    }
   }
 
   def constructParam(ptree: NodeOrLeaf[Token]): Formal = {
@@ -146,9 +157,17 @@ class ASTConstructor {
       case Node('Expression ::= List('Expression, DOT(), LENGTH()), List(e, _, _)) =>
         val pe = constructExpr(e)
         ArrayLength(pe).setPos(pe)
-      case Node('Expression ::= List('Expression, DOT(), 'Identifier, LPAREN(), 'Args, RPAREN()), List(e, _, id, _, as, _)) =>
+      case Node('Expression ::= List('Expression, DOT(), 'Identifier, 'ArgsOpt), List(e, _, id, argsOpt)) => argsOpt match {
+        case Node('ArgsOpt ::= LPAREN() :: _, List(_, args, _)) =>
+          val pe = constructExpr(e)
+          MethodCall(pe, constructId(id), constructList(args, constructExpr, hasComma = true)).setPos(pe)
+        case Node('ArgsOpt ::= _, List()) =>
+          val pe = constructExpr(e)
+          MethodCall(pe, constructId(id), List()).setPos(pe)
+      }
+      case Node('Expression ::= List('Expression, 'Identifier, 'ExprTerm), List(e, id, expr)) =>
         val pe = constructExpr(e)
-        MethodCall(pe, constructId(id), constructList(as, constructExpr, hasComma = true)).setPos(pe)
+        MethodCall(pe, constructId(id), List(constructExpr(expr))).setPos(pe)
       case Node('Expression ::= List(INTLITSENT), List(Leaf(it@INTLIT(i)))) =>
         IntLit(i).setPos(it)
       case Node('Expression ::= List(STRINGLITSENT), List(Leaf(st@STRINGLIT(s)))) =>
@@ -164,7 +183,7 @@ class ASTConstructor {
         This().setPos(tt)
       case Node('Expression ::= List(NEW(), INT(), LBRACKET(), 'Expression, RBRACKET()), List(Leaf(nt), _, _, e, _)) =>
         NewIntArray(constructExpr(e)).setPos(nt)
-      case Node('Expression ::= List(NEW(), 'Identifier, LPAREN(), RPAREN()), List(Leaf(nt), id, _, _)) =>
+      case Node('Expression ::= List(NEW(), 'Identifier, 'ParenOpt), List(Leaf(nt), id, _)) =>
         New(constructId(id)).setPos(nt)
       case Node('Expression ::= List(BANG(), 'Expression), List(Leaf(bt), e)) =>
         Not(constructExpr(e)).setPos(bt)

@@ -88,6 +88,12 @@ object Trees {
   case class Not(expr: ExprTree) extends ExprTree {
     val getType = TBoolean
   }
+  def deduceOpOverloadType(cs : ClassSymbol, name : String, rhsType : Type) : Type = {
+    cs.lookupMethod(name) match {
+      case Some(ms) if ms.params.size == 1 && ms.params.head._2.getType == rhsType => ms.getType
+      case _ => TError
+    }
+  }
   // Arithmetic operators (Plus works on any combination of Int/String)
   case class Plus(lhs: ExprTree, rhs: ExprTree) extends ExprTree {
     def getType = (lhs.getType, rhs.getType) match{
@@ -95,17 +101,30 @@ object Trees {
       case (TString, TString) => TString
       case (TInt, TString) => TString
       case (TString, TInt) => TString
+      case (TClass(c), rhstype) => deduceOpOverloadType(c, "plus", rhstype)
       case _ => TError
     }
   }
   case class Minus(lhs: ExprTree, rhs: ExprTree) extends ExprTree {
-    val getType = TInt
+    def getType = (lhs.getType, rhs.getType) match {
+      case (TInt, TInt) => TInt
+      case (TClass(c), rhstype) => deduceOpOverloadType(c, "minus", rhstype)
+      case _ => TError
+    }
   }
   case class Times(lhs: ExprTree, rhs: ExprTree) extends ExprTree {
-    val getType = TInt
+    def getType = (lhs.getType, rhs.getType) match {
+      case (TInt, TInt) => TInt
+      case (TClass(c), rhstype) => deduceOpOverloadType(c, "times", rhstype)
+      case _ => TError
+    }
   }
   case class Div(lhs: ExprTree, rhs: ExprTree) extends ExprTree {
-    val getType = TInt
+    def getType = (lhs.getType, rhs.getType) match {
+      case (TInt, TInt) => TInt
+      case (TClass(c), rhstype) => deduceOpOverloadType(c, "divided", rhstype)
+      case _ => TError
+    }
   }
   case class LessThan(lhs: ExprTree, rhs: ExprTree) extends ExprTree {
     val getType = TBoolean

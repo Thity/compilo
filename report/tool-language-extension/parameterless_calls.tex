@@ -1,0 +1,57 @@
+\section{Parameterless Calls}
+\textnormal{To define or call a method which takes no parameter, you don't need
+  to put parenthesis anymore. This works for 'new' instances too.}
+
+\subsection{Example}
+
+\begin{lstlisting}
+  new Matrix2();
+  ...
+  class Matrix2 {
+    def isInversible() : Boolean = {
+      var determinant : Int;
+      determinant = this.getDeterminant();
+      return determinant != 0;
+    }
+  }
+\end{lstlisting}
+\textmd{Becomes}
+\begin{lstlisting}
+  new Matrix2;
+  ...
+  class Matrix2 {
+    def isInversible : Boolean = {
+      var determinant : Int;
+      determinant = this.getDeterminant;
+      return determinant != 0;
+    }
+  }
+\end{lstlisting}
+
+\subsection{Implementation}
+
+\textnormal{This feature was totally implemented on the parser. We had to change
+  the definition of method declarations, dot operation and new expression on the
+  grammar, to make another option for the arguments as following. It gives the
+  possibility to not put parenthesis for the cases we don't need to.}
+
+\lstset{escapeinside={<@}{@>}}
+\begin{lstlisting}
+<@$\ldots$@>
+'MethodDeclaration ::= DEF() ~ 'Identifier ~ <@\colorbox{green}{'ParamsOpt}@>
+~ COLON() ~ 'Type ~ EQSIGN() ~ LBRACE()  
+~ 'VarDecs ~ 'Stmts ~ RETURN() ~ 'Expression
+~ SEMICOLON() ~ RBRACE(),
+'ParamsOpt ::= LPAREN() ~ 'Params ~ RPAREN()
+| epsilon(),
+<@$\ldots$@>
+'ExprTerm ::= <@$\ldots$@> | NEW() ~ 'NewEnd | <@$\ldots$@> 
+'NewEnd ::= <@\colorbox{green}{'Identifier ~ 'ParenOpt}@>
+  | INT() ~ LBRACKET() ~ 'Expression ~ RBRACKET(),
+'ParenOpt ::= LPAREN() ~ RPAREN()
+  | <@\colorbox{green}{epsilon()}@>,
+<@$\ldots$@>
+\end{lstlisting}
+
+\textnormal{Similar changes were done in the non-LL1 grammar and the
+  constructors have been adjusted.}
